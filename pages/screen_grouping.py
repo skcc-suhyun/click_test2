@@ -894,6 +894,26 @@ def group_actions_by_screen(actions):
         if len(screens) >= 3 and original_screen2_image and os.path.exists(original_screen2_image):
             screens[2]["representative_image"] = original_screen2_image
     
+    # Screen 3이 비어있으면 제거하고 Screen 4를 Screen 3으로 재배치
+    if len(screens) >= 3:
+        # Screen 3에 elementBounds가 있는 클릭 액션이 있는지 확인
+        screen3_click_actions = screens[2].get("click_actions", [])
+        screen3_has_valid_actions = False
+        for action in screen3_click_actions:
+            meta = parse_metadata(action)
+            coords = meta.get("coordinates", {})
+            bounds = coords.get("elementBounds")
+            if bounds:
+                screen3_has_valid_actions = True
+                break
+        
+        # Screen 3이 비어있으면 제거
+        if not screen3_has_valid_actions:
+            # Screen 3 제거
+            screens.pop(2)
+            # Screen 4가 있으면 Screen 3으로 재배치 (인덱스는 자동으로 조정됨)
+            # 이미 pop으로 제거했으므로 인덱스가 자동으로 조정됨
+    
     return screens
 
 
