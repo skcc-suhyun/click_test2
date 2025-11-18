@@ -2,6 +2,7 @@ import sys
 import os
 import json
 import base64
+import re
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import streamlit as st
@@ -842,6 +843,57 @@ def group_actions_by_screen(actions):
         screen["representative_image"] = representative_image
         screen["click_actions"] = click_actions  # 클릭 액션만 별도 저장
     
+    # 재구성: Screen 1에 Screen 2의 첫 번째 액션 포함, Screen 2 분리, 이미지 재할당
+    if len(screens) >= 2:
+        # 원래 Screen 2의 대표 이미지 저장 (재구성 전에 먼저 저장)
+        original_screen2_image = screens[1].get("representative_image")
+        
+        # Screen 1에 Screen 2의 첫 번째 액션 추가
+        if len(screens[1]["actions"]) > 0:
+            first_action_from_screen2 = screens[1]["actions"][0]
+            screens[0]["actions"].append(first_action_from_screen2)
+            # Screen 1의 클릭 액션도 업데이트
+            if first_action_from_screen2.get("action_type") == "click":
+                screens[0]["click_actions"].append(first_action_from_screen2)
+        
+        # Screen 2에서 첫 번째 액션 제거
+        if len(screens[1]["actions"]) > 0:
+            screens[1]["actions"] = screens[1]["actions"][1:]
+            # Screen 2의 클릭 액션도 업데이트
+            screens[1]["click_actions"] = [
+                a for a in screens[1]["actions"] 
+                if a.get("action_type") == "click"
+            ]
+        
+        # Screen 1의 대표 이미지를 이미지 5번으로 설정 (이미지 번호로 찾기)
+        for action in screens[0]["actions"]:
+            screenshot_path = action.get("screenshot_real_path") or action.get("screenshot_path")
+            if screenshot_path and os.path.exists(screenshot_path):
+                # 파일명에서 숫자 추출
+                filename = os.path.basename(screenshot_path)
+                match = re.search(r'(\d+)', filename)
+                if match:
+                    img_num = int(match.group(1))
+                    if img_num == 5:
+                        screens[0]["representative_image"] = screenshot_path
+                        break
+        
+        # Screen 2의 대표 이미지를 이미지 14번으로 설정
+        for action in screens[1]["actions"]:
+            screenshot_path = action.get("screenshot_real_path") or action.get("screenshot_path")
+            if screenshot_path and os.path.exists(screenshot_path):
+                filename = os.path.basename(screenshot_path)
+                match = re.search(r'(\d+)', filename)
+                if match:
+                    img_num = int(match.group(1))
+                    if img_num == 14:
+                        screens[1]["representative_image"] = screenshot_path
+                        break
+        
+        # Screen 3이 있으면 원래 Screen 2의 대표 이미지 사용
+        if len(screens) >= 3 and original_screen2_image and os.path.exists(original_screen2_image):
+            screens[2]["representative_image"] = original_screen2_image
+    
     return screens
 
 
@@ -864,6 +916,22 @@ st.info(f"🖱️ 클릭 액션: {len(click_actions)}개")
 
 # 화면별로 그룹핑
 screens = group_actions_by_screen(actions)
+
+# 디버깅: screen_name 분포 확인
+screen_name_counts = {}
+for action in actions:
+    screen_name = action.get("screen_name")
+    screen_name_key = screen_name or "None"
+    screen_name_counts[screen_name_key] = screen_name_counts.get(screen_name_key, 0) + 1
+
+with st.expander("🔍 그룹핑 디버깅 정보", expanded=True):
+    st.write("**screen_name 분포:**")
+    for name, count in screen_name_counts.items():
+        st.write(f"- `{name}`: {count}개 액션")
+    st.write(f"\n**그룹핑 결과:** {len(screens)}개 그룹")
+    for idx, screen in enumerate(screens):
+        st.write(f"- 그룹 {idx+1}: `{screen.get('screen_name', '알 수 없음')}` ({len(screen.get('actions', []))}개 액션)")
+
 st.success(f"✅ 총 **{len(screens)}개**의 화면으로 그룹핑되었습니다.")
 
 # 통계 정보
@@ -888,12 +956,9 @@ for screen_idx, screen in enumerate(screens):
         if bounds:
             valid_click_actions.append(action)
     
-    # elementBounds가 있는 클릭 액션이 없으면 스킵
-    if len(valid_click_actions) == 0:
-        continue
-    
+    # elementBounds가 있는 클릭 액션이 없어도 그룹은 표시 (이미지만 없이)
     with st.expander(
-        f"📄 Screen {screen_idx + 1}: {screen_name} (클릭 {len(valid_click_actions)}개)", 
+        f"📄 Screen {screen_idx + 1}: {screen_name} (클릭 {len(click_actions_in_screen)}개, elementBounds {len(valid_click_actions)}개)", 
         expanded=(screen_idx == 0)  # 첫 번째 화면만 기본으로 펼침
     ):
         st.write(f"🔸 전체 액션: **{len(all_actions_in_screen)}개** | 클릭 액션 (elementBounds 있음): **{len(valid_click_actions)}개**")
@@ -903,8 +968,10 @@ for screen_idx, screen in enumerate(screens):
         
         # 대표 이미지가 없거나 존재하지 않으면 마지막 클릭 액션의 _prev_screenshot 사용
         if not image_path or not os.path.exists(image_path):
-            if len(valid_click_actions) > 0:
-                last_click_action = valid_click_actions[-1]  # 마지막 클릭 액션
+            # valid_click_actions가 없으면 click_actions_in_screen 사용
+            actions_to_check = valid_click_actions if len(valid_click_actions) > 0 else click_actions_in_screen
+            if len(actions_to_check) > 0:
+                last_click_action = actions_to_check[-1]  # 마지막 클릭 액션
                 # _prev_screenshot 우선
                 prev_screenshot = last_click_action.get("_prev_screenshot")
                 if prev_screenshot and os.path.exists(prev_screenshot):
