@@ -42,14 +42,14 @@ if not hasattr(st.session_state, 'screen_grouping_css_injected'):
         position: absolute !important;
         background: white !important;
         color: red !important;
-        border: 2px solid red !important;
-        width: 20px !important;
-        height: 20px !important;
+        border: 1px solid red !important;
+        width: 10px !important;
+        height: 10px !important;
         border-radius: 50% !important;
-        line-height: 20px !important;
+        line-height: 10px !important;
         text-align: center !important;
         font-weight: bold !important;
-        font-size: 12px !important;
+        font-size: 6px !important;
         pointer-events: none !important;
         z-index: 20 !important;
     }
@@ -392,7 +392,7 @@ def render_grouped_highlight(image_path, actions):
         overlay_html += f'<div id="{box_id}" class="overlay-box" style="position:absolute!important;top:{init_top}px!important;left:{init_left}px!important;width:{init_width}px!important;height:{init_height}px!important;border:4px solid red!important;background-color:rgba(255,0,0,0.5)!important;box-sizing:border-box!important;pointer-events:none!important;z-index:10!important;display:block!important;"></div>'
         label_top_init = max(0, init_top - 15)
         label_left_init = max(0, init_left - 15)
-        overlay_html += f'<div id="{label_id}" class="overlay-label" style="position:absolute!important;top:{label_top_init}px!important;left:{label_left_init}px!important;background:white!important;color:red!important;border:2px solid red!important;width:25px!important;height:25px!important;border-radius:50%!important;line-height:25px!important;text-align:center!important;font-weight:bold!important;font-size:14px!important;z-index:20!important;display:block!important;">{data["idx"]}</div>'
+        overlay_html += f'<div id="{label_id}" class="overlay-label" style="position:absolute!important;top:{label_top_init}px!important;left:{label_left_init}px!important;background:white!important;color:red!important;border:1px solid red!important;width:12px!important;height:12px!important;border-radius:50%!important;line-height:12px!important;text-align:center!important;font-weight:bold!important;font-size:7px!important;z-index:20!important;display:block!important;">{data["idx"]}</div>'
 
     # (8) JavaScript로 실제 렌더링 크기 기반 스케일링
     bounds_json = json.dumps(bounds_data)
@@ -528,14 +528,14 @@ def render_grouped_highlight(image_path, actions):
                 label.style.setProperty('z-index', '20', 'important');
                 label.style.setProperty('background', 'white', 'important');
                 label.style.setProperty('color', 'red', 'important');
-                label.style.setProperty('border', '2px solid red', 'important');
-                label.style.setProperty('width', '20px', 'important');
-                label.style.setProperty('height', '20px', 'important');
+                label.style.setProperty('border', '1px solid red', 'important');
+                label.style.setProperty('width', '10px', 'important');
+                label.style.setProperty('height', '10px', 'important');
                 label.style.setProperty('border-radius', '50%', 'important');
-                label.style.setProperty('line-height', '20px', 'important');
+                label.style.setProperty('line-height', '10px', 'important');
                 label.style.setProperty('text-align', 'center', 'important');
                 label.style.setProperty('font-weight', 'bold', 'important');
-                label.style.setProperty('font-size', '12px', 'important');
+                label.style.setProperty('font-size', '6px', 'important');
                 label.style.setProperty('pointer-events', 'none', 'important');
                 
                 // 최종 확인
@@ -633,14 +633,14 @@ def render_grouped_highlight(image_path, actions):
             position: absolute !important;
             background: white !important;
             color: red !important;
-            border: 2px solid red !important;
-            width: 25px !important;
-            height: 25px !important;
+            border: 1px solid red !important;
+            width: 10px !important;
+            height: 10px !important;
             border-radius: 50% !important;
-            line-height: 25px !important;
+            line-height: 10px !important;
             text-align: center !important;
             font-weight: bold !important;
-            font-size: 14px !important;
+            font-size: 6px !important;
             pointer-events: none !important;
             z-index: 20 !important;
         }}
