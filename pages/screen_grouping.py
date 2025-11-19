@@ -914,6 +914,54 @@ def group_actions_by_screen(actions):
             # Screen 4가 있으면 Screen 3으로 재배치 (인덱스는 자동으로 조정됨)
             # 이미 pop으로 제거했으므로 인덱스가 자동으로 조정됨
     
+    # Screen 2의 클릭 액션 4, 5번을 Screen 3으로 이동
+    if len(screens) >= 3:
+        screen2 = screens[1]  # Screen 2 (인덱스 1)
+        screen3 = screens[2]   # Screen 3 (인덱스 2)
+        
+        screen2_click_actions = screen2.get("click_actions", [])
+        
+        # Screen 2에 클릭 액션이 4개 이상 있는지 확인
+        if len(screen2_click_actions) >= 5:
+            # 클릭 액션 4, 5번 (인덱스 3, 4) 추출
+            actions_to_move = screen2_click_actions[3:5]  # 4번째, 5번째
+            
+            # Screen 2의 actions에서 해당 액션들 찾아서 제거
+            actions_to_move_ids = {id(action) for action in actions_to_move}
+            screen2["actions"] = [
+                action for action in screen2["actions"]
+                if id(action) not in actions_to_move_ids
+            ]
+            
+            # Screen 2의 click_actions에서도 제거
+            screen2["click_actions"] = [
+                action for action in screen2_click_actions
+                if id(action) not in actions_to_move_ids
+            ]
+            
+            # Screen 3의 actions에 추가 (앞에 추가)
+            screen3["actions"] = actions_to_move + screen3.get("actions", [])
+            
+            # Screen 3의 click_actions에도 추가
+            screen3_click_actions = screen3.get("click_actions", [])
+            screen3["click_actions"] = actions_to_move + screen3_click_actions
+    
+    # 마지막 화면의 대표 이미지를 마지막 이미지로 설정
+    if len(screens) > 0:
+        last_screen = screens[-1]
+        
+        # 모든 액션에서 마지막 스크린샷 찾기
+        last_screenshot = None
+        for action in reversed(actions):
+            screenshot_path = action.get("screenshot_real_path") or action.get("screenshot_path")
+            if screenshot_path and os.path.exists(screenshot_path):
+                last_screenshot = screenshot_path
+                break
+        
+        # 마지막 스크린샷을 찾았으면 마지막 화면의 대표 이미지로 설정
+        if last_screenshot:
+            last_screen["representative_image"] = last_screenshot
+    
     return screens
 
 
