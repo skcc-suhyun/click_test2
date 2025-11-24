@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 test2.py - 메뉴얼 에이전트 시각화/좌표 개발용 통합 로직 테스트 스크립트
 
@@ -14,6 +15,39 @@ UI/서버/React 완전 분리, 순수 로직 검증용 스크립트.
 
 import sys
 import os
+
+# Windows에서 UTF-8 출력 지원 (가장 먼저 설정)
+if sys.platform == 'win32':
+    try:
+        import io
+        if hasattr(sys.stdout, 'buffer'):
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+        if hasattr(sys.stderr, 'buffer'):
+            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+    except Exception:
+        pass  # 실패해도 계속 진행
+
+# 이모지를 안전하게 출력하는 헬퍼 함수
+def safe_print(*args, **kwargs):
+    """Windows에서 이모지가 포함된 출력을 안전하게 처리"""
+    try:
+        print(*args, **kwargs)
+    except UnicodeEncodeError:
+        # 이모지를 ASCII로 대체하여 출력
+        safe_args = []
+        for arg in args:
+            if isinstance(arg, str):
+                # 주요 이모지를 ASCII로 대체
+                arg = arg.replace('🧪', '[TEST]')
+                arg = arg.replace('✅', '[OK]')
+                arg = arg.replace('❌', '[ERROR]')
+                arg = arg.replace('⚠️', '[WARN]')
+                arg = arg.replace('📊', '[STAT]')
+                arg = arg.replace('📈', '[INFO]')
+                arg = arg.replace('▸', '->')
+            safe_args.append(arg)
+        print(*safe_args, **kwargs)
+
 import json
 import argparse
 from dataclasses import dataclass, field
@@ -533,16 +567,16 @@ def main() -> None:
     args = parse_args()
 
     if not os.path.exists(args.json):
-        print(f"❌ 오류: JSON 파일을 찾을 수 없습니다: {args.json}")
+        safe_print(f"[ERROR] JSON 파일을 찾을 수 없습니다: {args.json}", file=sys.stderr)
         sys.exit(1)
 
-    print("=" * 100)
-    print("🧪 메뉴얼 에이전트 - 스크린샷 기반 화면 그룹핑 & 좌표/API 로직 검증 (test2)")
-    print("=" * 100)
-    print(f"  ▸ JSON 파일: {args.json}")
-    print(f"  ▸ pHash 임계값: {args.phash_threshold}")
-    print(f"  ▸ SSIM 임계값: {args.ssim_threshold}")
-    print("=" * 100)
+    safe_print("=" * 100)
+    safe_print("메뉴얼 에이전트 - 스크린샷 기반 화면 그룹핑 & 좌표/API 로직 검증 (test2)")
+    safe_print("=" * 100)
+    safe_print(f"  -> JSON 파일: {args.json}")
+    safe_print(f"  -> pHash 임계값: {args.phash_threshold}")
+    safe_print(f"  -> SSIM 임계값: {args.ssim_threshold}")
+    safe_print("=" * 100)
 
     analyzer = UIScreenshotAnalyzer(
         json_path=args.json,
@@ -559,7 +593,7 @@ def main() -> None:
     analyzer.build_screen_summary()  # 순서 기반 플로우 생성 및 화면 전환 감지
     analyzer.print_summary()
 
-    print("\n✅ test2 로직 검증 완료!")
+    safe_print("\n[SUCCESS] test2 로직 검증 완료!")
 
 
 if __name__ == "__main__":
