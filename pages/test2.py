@@ -15,6 +15,7 @@ UI/서버/React 완전 분리, 순수 로직 검증용 스크립트.
 
 import sys
 import os
+import builtins
 
 # Windows에서 UTF-8 출력 지원
 # Streamlit 환경에서는 sys.stdout을 재설정하지 않음 (Streamlit이 자체적으로 관리)
@@ -22,7 +23,8 @@ import os
 # sys.stdout 재설정은 하지 않고 safe_print 함수를 사용
 
 # print 함수를 안전한 버전으로 재정의 (Streamlit 환경 대응)
-_original_print = print
+# builtins에서 원본 print를 가져와서 무한 재귀 방지
+_original_print = builtins.print
 def print(*args, **kwargs):
     """안전한 print 함수 (Streamlit 환경 대응)"""
     try:
