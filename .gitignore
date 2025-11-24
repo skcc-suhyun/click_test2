@@ -82,7 +82,8 @@ data/actions/temp_*
 # 그 다음 data/screenshots/ 폴더는 예외로 포함
 !data/screenshots/
 !data/screenshots/**
-screenshots/
+# 프로젝트 루트의 screenshots/ 폴더는 제외 (data/screenshots/는 위에서 이미 예외 처리됨)
+/screenshots/
 
 # Logs
 *.log
