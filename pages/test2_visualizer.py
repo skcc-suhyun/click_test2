@@ -9,84 +9,63 @@ test2_visualizer.py - test2.py 분석 결과를 Streamlit으로 시각화
 """
 
 import streamlit as st
+import streamlit.components.v1 as components
 import sys
 import os
 import json
 import importlib
+import base64
 from typing import Any, Dict, List, Optional, Tuple
 from PIL import Image
 import imagehash
 import numpy as np
 from skimage.metrics import structural_similarity as ssim
 
-# OCR 라이브러리 (선택적)
-try:
-    import easyocr
-    HAS_EASYOCR = True
-except ImportError:
-    HAS_EASYOCR = False
-
-# OCR 리더 초기화 (캐시, 지연 로딩)
-@st.cache_resource
-def get_ocr_reader():
-    """EasyOCR 리더 초기화 (한국어, 영어 지원) - 첫 사용 시에만 로드"""
-    if not HAS_EASYOCR:
-        return None
-    try:
-        # GPU 사용 안 함으로 설정하여 리소스 사용 최소화
-        return easyocr.Reader(['ko', 'en'], gpu=False, verbose=False)
-    except Exception as e:
-        st.warning(f"OCR 리더 초기화 실패: {e}")
-        return None
-
-@st.cache_data(ttl=3600)  # 1시간 캐시
-def extract_text_from_image(image_path: str) -> List[Dict[str, Any]]:
-    """이미지에서 텍스트 추출 (리소스 최적화: 이미지 크기 축소)"""
-    if not HAS_EASYOCR or not os.path.exists(image_path):
-        return []
-    
-    try:
-        reader = get_ocr_reader()
-        if reader is None:
-            return []
-        
-        original_path = image_path
-        temp_path = None
-        
-        # 이미지 크기 축소하여 OCR 처리 시간 단축 (최대 너비 800px)
-        img = Image.open(image_path)
-        max_width = 800
-        if img.width > max_width:
-            ratio = max_width / img.width
-            new_height = int(img.height * ratio)
-            img = img.resize((max_width, new_height), Image.Resampling.LANCZOS)
-            # 임시 파일로 저장
-            import tempfile
-            with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
-                img.save(tmp.name, 'PNG')
-                temp_path = tmp.name
-                image_path = temp_path
-        
-        results = reader.readtext(image_path, paragraph=False)
-        
-        # 임시 파일 삭제
-        if temp_path and temp_path != original_path:
-            try:
-                os.unlink(temp_path)
-            except:
-                pass
-        
-        return [
-            {
-                "text": result[1],
-                "confidence": float(result[2]),
-                "bbox": result[0]  # [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]
-            }
-            for result in results
-        ]
-    except Exception as e:
-        st.warning(f"OCR 오류: {e}")
-        return []
+# CSS 인젝션 (한 번만)
+if not hasattr(st.session_state, 'test2_visualizer_css_injected'):
+    st.markdown("""
+    <style>
+    .highlight-img {
+        max-width: 100% !important;
+        max-height: 100vh !important;
+        width: auto !important;
+        height: auto !important;
+        object-fit: contain !important;
+        position: relative !important;
+        z-index: 1 !important;
+    }
+    .highlight-wrapper {
+        position: relative !important;
+        display: inline-block !important;
+        max-width: 100% !important;
+        max-height: 100vh !important;
+    }
+    .highlight-box {
+        position: absolute !important;
+        border: 4px solid red !important;
+        background-color: rgba(255, 0, 0, 0.3) !important;
+        pointer-events: none !important;
+        box-sizing: border-box !important;
+        z-index: 10 !important;
+    }
+    .highlight-label {
+        position: absolute !important;
+        background: white !important;
+        color: red !important;
+        border: 1px solid red !important;
+        width: 24px !important;
+        height: 24px !important;
+        border-radius: 50% !important;
+        line-height: 24px !important;
+        text-align: center !important;
+        font-weight: bold !important;
+        font-size: 12px !important;
+        pointer-events: none !important;
+        z-index: 20 !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    st.session_state.test2_visualizer_css_injected = True
 
 # 상위 디렉터리를 sys.path에 추가
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -279,35 +258,326 @@ if st.session_state.get("analysis_complete", False):
         with col3:
             st.info(f"**포함 액션 수:** {len(cluster.actions)}개")
         
-        # 대표 이미지 표시
+        # 대표 이미지 표시 (하이라이트 포함 - screen_grouping.py 방식)
         st.markdown("### 🖼️ 대표 이미지")
         if os.path.exists(cluster.representative_image):
-            rep_img = Image.open(cluster.representative_image)
-            st.image(rep_img, caption=os.path.basename(cluster.representative_image), use_container_width=True)
+            # 클러스터의 모든 클릭 액션 가져오기 (대표 이미지에 모두 표시)
+            all_click_actions = [a for a in cluster.actions if a.coordinates]
             
-            # OCR로 텍스트 추출 (선택적, 버튼 클릭 시에만 실행)
-            if HAS_EASYOCR:
-                ocr_key = f"ocr_btn_{cluster.cluster_id}"
-                if st.button("📝 텍스트 추출 (OCR)", key=ocr_key, help="이미지에서 텍스트를 추출합니다. 리소스를 많이 사용할 수 있습니다."):
-                    with st.spinner("텍스트 추출 중... (이 작업은 시간이 걸릴 수 있습니다)"):
-                        ocr_results = extract_text_from_image(cluster.representative_image)
-                        if ocr_results:
-                            st.markdown("**추출된 텍스트:**")
-                            for idx, result in enumerate(ocr_results, 1):
-                                confidence = result["confidence"]
-                                text = result["text"]
-                                color = "🟢" if confidence > 0.8 else "🟡" if confidence > 0.5 else "🔴"
-                                st.markdown(f"{color} **{idx}.** `{text}` (신뢰도: {confidence:.2%})")
+            # 유효한 액션 필터링 (elementBounds 또는 x, y 좌표가 있는 액션)
+            valid_actions = []
+            for action in all_click_actions:
+                if not action.coordinates:
+                    continue
+                coords = action.coordinates or {}
+                bounds = coords.get("elementBounds")
+                x = coords.get("pageX") or coords.get("clientX") or coords.get("x")
+                y = coords.get("pageY") or coords.get("clientY") or coords.get("y")
+                
+                if bounds or (x is not None and y is not None):
+                    valid_actions.append(action)
+            
+            if len(valid_actions) > 0:
+                # 이미지 크기 읽기
+                try:
+                    with Image.open(cluster.representative_image) as pil_img:
+                        image_width = pil_img.width
+                        image_height = pil_img.height
+                except Exception as e:
+                    st.error(f"❌ 이미지 읽기 오류: {e}")
+                    image_width = 1920
+                    image_height = 1080
+                
+                # 첫 액션에서 viewport 크기 획득
+                first_coords = valid_actions[0].coordinates or {}
+                vp_w = int(first_coords.get("viewportWidth", image_width))
+                vp_h = int(first_coords.get("viewportHeight", image_height))
+                
+                # 이미지 base64 변환
+                with open(cluster.representative_image, "rb") as f:
+                    img_bytes = f.read()
+                    img_b64 = base64.b64encode(img_bytes).decode()
+                
+                # 고유 ID 생성
+                wrapper_id = f"wrapper-{abs(hash(cluster.representative_image))}-{cluster.cluster_id}"
+                img_id = f"img-{abs(hash(cluster.representative_image))}-{cluster.cluster_id}"
+                
+                # 하이라이트 데이터 수집 (screen_grouping.py 방식)
+                bounds_data = []
+                for idx, action in enumerate(valid_actions):
+                    coords = action.coordinates or {}
+                    bounds = coords.get("elementBounds", {})
+                    
+                    # elementBounds 우선 사용 (ratio 기반)
+                    if bounds:
+                        top_ratio = bounds.get("topRatio")
+                        left_ratio = bounds.get("leftRatio")
+                        width_ratio = bounds.get("widthRatio")
+                        height_ratio = bounds.get("heightRatio")
+                        
+                        if all(r is not None for r in [top_ratio, left_ratio, width_ratio, height_ratio]):
+                            bounds_data.append({
+                                'idx': idx + 1,
+                                'type': 'bounds',
+                                'topRatio': top_ratio,
+                                'leftRatio': left_ratio,
+                                'widthRatio': width_ratio,
+                                'heightRatio': height_ratio
+                            })
+                    else:
+                        # x, y 좌표 사용
+                        x = coords.get("x") or coords.get("pageX") or coords.get("clientX")
+                        y = coords.get("y") or coords.get("pageY") or coords.get("clientY")
+                        
+                        if x is not None and y is not None:
+                            bounds_data.append({
+                                'idx': idx + 1,
+                                'type': 'point',
+                                'top': y - 10,
+                                'left': x - 10,
+                                'width': 20,
+                                'height': 20,
+                                'x': x,
+                                'y': y
+                            })
+                
+                # overlay HTML 구성
+                overlay_html = ""
+                for data in bounds_data:
+                    box_id = f"box-{wrapper_id}-{data['idx']}"
+                    label_id = f"label-{wrapper_id}-{data['idx']}"
+                    
+                    # 초기값 계산
+                    if data.get('type') == 'point':
+                        scale_x_init = image_width / vp_w if vp_w > 0 else 1.0
+                        scale_y_init = image_height / vp_h if vp_h > 0 else 1.0
+                        center_x = data.get('x', 0) * scale_x_init
+                        center_y = data.get('y', 0) * scale_y_init
+                        box_size = 30
+                        init_left = center_x - box_size / 2
+                        init_top = center_y - box_size / 2
+                        init_width = box_size
+                        init_height = box_size
+                    else:
+                        top_ratio = data.get('topRatio', 0)
+                        left_ratio = data.get('leftRatio', 0)
+                        width_ratio = data.get('widthRatio', 0)
+                        height_ratio = data.get('heightRatio', 0)
+                        
+                        init_top = top_ratio * image_height
+                        init_left = left_ratio * image_width
+                        init_width = width_ratio * image_width
+                        init_height = height_ratio * image_height
+                    
+                    overlay_html += f'<div id="{box_id}" class="highlight-box" style="position:absolute!important;top:{init_top}px!important;left:{init_left}px!important;width:{init_width}px!important;height:{init_height}px!important;border:4px solid red!important;background-color:rgba(255,0,0,0.5)!important;box-sizing:border-box!important;pointer-events:none!important;z-index:10!important;display:block!important;"></div>'
+                    label_top_init = max(0, init_top - 15)
+                    label_left_init = max(0, init_left - 15)
+                    overlay_html += f'<div id="{label_id}" class="highlight-label" style="position:absolute!important;top:{label_top_init}px!important;left:{label_left_init}px!important;background:white!important;color:red!important;border:1px solid red!important;width:12px!important;height:12px!important;border-radius:50%!important;line-height:12px!important;text-align:center!important;font-weight:bold!important;font-size:7px!important;z-index:20!important;display:block!important;">{data["idx"]}</div>'
+                
+                # JavaScript로 스케일링 (screen_grouping.py 방식)
+                bounds_json = json.dumps(bounds_data)
+                js_code = f"""
+                <script>
+                (function() {{
+                    const wrapperId = '{wrapper_id}';
+                    const wrapper = document.getElementById(wrapperId);
+                    const imgId = '{img_id}';
+                    const img = document.getElementById(imgId);
+                    
+                    if (!wrapper || !img) {{
+                        console.error('요소를 찾을 수 없습니다:', {{wrapperId, imgId}});
+                        return;
+                    }}
+                    
+                    const viewportWidth = {vp_w};
+                    const viewportHeight = {vp_h};
+                    const boundsData = {bounds_json};
+                    
+                    function adjustHighlights() {{
+                        if (!img.complete || img.naturalWidth === 0 || img.naturalHeight === 0) {{
+                            setTimeout(adjustHighlights, 500);
+                            return;
+                        }}
+                        
+                        let imgDisplayWidth = img.offsetWidth || img.clientWidth;
+                        let imgDisplayHeight = img.offsetHeight || img.clientHeight;
+                        
+                        if (imgDisplayWidth === 0 || imgDisplayHeight === 0) {{
+                            const rect = img.getBoundingClientRect();
+                            imgDisplayWidth = rect.width;
+                            imgDisplayHeight = rect.height;
+                        }}
+                        
+                        if (imgDisplayWidth === 0 || imgDisplayHeight === 0) {{
+                            imgDisplayWidth = img.naturalWidth;
+                            imgDisplayHeight = img.naturalHeight;
+                        }}
+                        
+                        const scaleX = imgDisplayWidth / viewportWidth;
+                        const scaleY = imgDisplayHeight / viewportHeight;
+                        
+                        boundsData.forEach(function(data) {{
+                            const boxId = 'box-' + wrapperId + '-' + data.idx;
+                            const labelId = 'label-' + wrapperId + '-' + data.idx;
                             
-                            # 전체 텍스트 합치기
-                            all_text = " ".join([r["text"] for r in ocr_results])
-                            st.markdown("---")
-                            st.markdown("**전체 텍스트:**")
-                            st.text_area("", all_text, height=100, key=f"ocr_text_{cluster.cluster_id}")
-                        else:
-                            st.info("텍스트를 찾을 수 없습니다.")
+                            const box = document.getElementById(boxId);
+                            const label = document.getElementById(labelId);
+                            
+                            if (!box || !label) return;
+                            
+                            let drawTop, drawLeft, drawWidth, drawHeight;
+                            
+                            if (data.type === 'point') {{
+                                const centerX = data.x * scaleX;
+                                const centerY = data.y * scaleY;
+                                const boxSize = 20;
+                                drawLeft = centerX - boxSize / 2;
+                                drawTop = centerY - boxSize / 2;
+                                drawWidth = boxSize;
+                                drawHeight = boxSize;
+                                box.style.setProperty('border-radius', '50%', 'important');
+                            }} else {{
+                                drawTop = data.topRatio * imgDisplayHeight;
+                                drawLeft = data.leftRatio * imgDisplayWidth;
+                                drawWidth = data.widthRatio * imgDisplayWidth;
+                                drawHeight = data.heightRatio * imgDisplayHeight;
+                                box.style.setProperty('border-radius', '0%', 'important');
+                            }}
+                            
+                            box.style.setProperty('top', drawTop + 'px', 'important');
+                            box.style.setProperty('left', drawLeft + 'px', 'important');
+                            box.style.setProperty('width', Math.max(10, drawWidth) + 'px', 'important');
+                            box.style.setProperty('height', Math.max(10, drawHeight) + 'px', 'important');
+                            box.style.setProperty('display', 'block', 'important');
+                            box.style.setProperty('border', '4px solid #ff0000', 'important');
+                            box.style.setProperty('background-color', 'rgba(255, 0, 0, 0.5)', 'important');
+                            box.style.setProperty('z-index', '100', 'important');
+                            box.style.setProperty('opacity', '1', 'important');
+                            
+                            // 라벨 설정 (screen_grouping.py와 동일)
+                            const labelTop = Math.max(0, drawTop - 10);
+                            const labelLeft = Math.max(0, drawLeft - 10);
+                            label.style.setProperty('top', labelTop + 'px', 'important');
+                            label.style.setProperty('left', labelLeft + 'px', 'important');
+                            label.style.setProperty('display', 'block', 'important');
+                            label.style.setProperty('position', 'absolute', 'important');
+                            label.style.setProperty('z-index', '20', 'important');
+                            label.style.setProperty('background', 'white', 'important');
+                            label.style.setProperty('color', 'red', 'important');
+                            label.style.setProperty('border', '1px solid red', 'important');
+                            label.style.setProperty('width', '10px', 'important');
+                            label.style.setProperty('height', '10px', 'important');
+                            label.style.setProperty('border-radius', '50%', 'important');
+                            label.style.setProperty('line-height', '10px', 'important');
+                            label.style.setProperty('text-align', 'center', 'important');
+                            label.style.setProperty('font-weight', 'bold', 'important');
+                            label.style.setProperty('font-size', '6px', 'important');
+                            label.style.setProperty('pointer-events', 'none', 'important');
+                        }});
+                    }}
+                    
+                    if (img.complete) {{
+                        setTimeout(adjustHighlights, 500);
+                    }} else {{
+                        img.addEventListener('load', function() {{
+                            setTimeout(adjustHighlights, 500);
+                        }});
+                    }}
+                    
+                    let attempts = 0;
+                    const checkInterval = setInterval(function() {{
+                        attempts++;
+                        const width = img.offsetWidth || img.getBoundingClientRect().width;
+                        if (width > 0 || attempts >= 50) {{
+                            clearInterval(checkInterval);
+                            adjustHighlights();
+                            setTimeout(adjustHighlights, 1000);
+                            setTimeout(adjustHighlights, 2000);
+                        }}
+                    }}, 200);
+                }})();
+                </script>
+                """
+                
+                # 전체 HTML 구성 (screen_grouping.py와 동일한 구조)
+                html = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {{
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+        }}
+        .container {{
+            width: 100% !important;
+            height: 100vh !important;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            overflow: hidden !important;
+        }}
+        .highlight-img {{
+            max-width: 100% !important;
+            max-height: 100vh !important;
+            width: auto !important;
+            height: auto !important;
+            object-fit: contain !important;
+            position: relative !important;
+            z-index: 1 !important;
+            display: block !important;
+        }}
+        .highlight-wrapper {{
+            position: relative !important;
+            display: inline-block !important;
+            max-width: 100% !important;
+            max-height: 100vh !important;
+        }}
+        .highlight-box {{
+            position: absolute !important;
+            border: 4px solid red !important;
+            background-color: rgba(255, 0, 0, 0.5) !important;
+            pointer-events: none !important;
+            box-sizing: border-box !important;
+            z-index: 10 !important;
+        }}
+        .highlight-label {{
+            position: absolute !important;
+            background: white !important;
+            color: red !important;
+            border: 1px solid red !important;
+            width: 10px !important;
+            height: 10px !important;
+            border-radius: 50% !important;
+            line-height: 10px !important;
+            text-align: center !important;
+            font-weight: bold !important;
+            font-size: 6px !important;
+            pointer-events: none !important;
+            z-index: 20 !important;
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="{wrapper_id}" class="highlight-wrapper">
+            <img id="{img_id}" class="highlight-img"
+                 src="data:image/png;base64,{img_b64}">
+            {overlay_html}
+        </div>
+    </div>
+    {js_code}
+</body>
+</html>
+                """
+                
+                st.info(f"대표 이미지에 {len(bounds_data)}개의 클릭 위치가 표시됩니다.")
+                components.html(html, height=min(image_height + 100, 800), scrolling=False)
             else:
-                st.info("💡 OCR 기능을 사용하려면 `pip install easyocr`를 실행하세요.")
+                # 하이라이트할 액션이 없으면 일반 이미지만 표시
+                rep_img = Image.open(cluster.representative_image)
+                st.image(rep_img, caption=os.path.basename(cluster.representative_image), use_container_width=True)
         else:
             st.warning(f"이미지를 찾을 수 없습니다: {cluster.representative_image}")
         
@@ -322,68 +592,25 @@ if st.session_state.get("analysis_complete", False):
                     col1, col2 = st.columns([2, 1])
                     
                     with col1:
-                        # 스크린샷 이미지 표시
+                        # 스크린샷 이미지 표시 (하이라이트 없이 일반 이미지만)
                         if action.screenshot_path and os.path.exists(action.screenshot_path):
                             img = Image.open(action.screenshot_path)
-                            
-                            # 클릭 좌표 표시를 위한 이미지 복사
-                            img_with_marker = img.copy()
-                            
-                            # 좌표 추출
-                            coords = action.coordinates or {}
-                            x = coords.get("pageX") or coords.get("clientX") or coords.get("x")
-                            y = coords.get("pageY") or coords.get("clientY") or coords.get("y")
-                            
-                            # 클릭 위치에 마커 그리기
-                            if x is not None and y is not None:
-                                from PIL import ImageDraw
-                                draw = ImageDraw.Draw(img_with_marker)
-                                # 빨간 원으로 클릭 위치 표시
-                                radius = 10
-                                draw.ellipse(
-                                    [(x - radius, y - radius), (x + radius, y + radius)],
-                                    fill="red",
-                                    outline="darkred",
-                                    width=3
-                                )
-                                # 십자선 그리기
-                                draw.line([(x - 20, y), (x + 20, y)], fill="red", width=2)
-                                draw.line([(x, y - 20), (x, y + 20)], fill="red", width=2)
-                            
-                            st.image(img_with_marker, caption=f"클릭 위치: ({x}, {y})", use_container_width=True)
-                            
-                            # OCR로 텍스트 추출 (선택적, 버튼 클릭 시에만 실행)
-                            if HAS_EASYOCR:
-                                ocr_click_key = f"ocr_click_btn_{action.action_id}"
-                                if st.button("📝 텍스트 추출 (OCR)", key=ocr_click_key, help="이미지에서 텍스트를 추출합니다. 리소스를 많이 사용할 수 있습니다."):
-                                    with st.spinner("텍스트 추출 중... (이 작업은 시간이 걸릴 수 있습니다)"):
-                                        ocr_results = extract_text_from_image(action.screenshot_path)
-                                        if ocr_results:
-                                            st.markdown("**추출된 텍스트:**")
-                                            for idx, result in enumerate(ocr_results, 1):
-                                                confidence = result["confidence"]
-                                                text = result["text"]
-                                                color = "🟢" if confidence > 0.8 else "🟡" if confidence > 0.5 else "🔴"
-                                                st.markdown(f"{color} **{idx}.** `{text}` (신뢰도: {confidence:.2%})")
-                                            
-                                            # 전체 텍스트 합치기
-                                            all_text = " ".join([r["text"] for r in ocr_results])
-                                            st.markdown("---")
-                                            st.markdown("**전체 텍스트:**")
-                                            st.text_area("", all_text, height=100, key=f"ocr_click_{action.action_id}")
-                                        else:
-                                            st.info("텍스트를 찾을 수 없습니다.")
+                            st.image(img, caption=f"스크린샷 - Action ID: {action.action_id}", use_container_width=True)
                         else:
                             st.warning("스크린샷을 찾을 수 없습니다.")
                     
                     with col2:
                         # 좌표 정보
                         st.markdown("**📍 좌표 정보**")
-                        if action.coordinates:
-                            coords = action.coordinates
+                        coords = action.coordinates or {}
+                        if coords:
                             st.json(coords)
                         else:
                             st.info("좌표 정보 없음")
+                        
+                        # 좌표 추출 (DOM 매칭에 필요)
+                        x = coords.get("pageX") or coords.get("clientX") or coords.get("x")
+                        y = coords.get("pageY") or coords.get("clientY") or coords.get("y")
                         
                         # DOM 매칭 시도
                         st.markdown("**🔍 DOM 매칭 결과**")
