@@ -16,37 +16,50 @@ UI/서버/React 완전 분리, 순수 로직 검증용 스크립트.
 import sys
 import os
 
-# Windows에서 UTF-8 출력 지원 (가장 먼저 설정)
-if sys.platform == 'win32':
+# Windows에서 UTF-8 출력 지원
+# Streamlit 환경에서는 sys.stdout을 재설정하지 않음 (Streamlit이 자체적으로 관리)
+# 모듈 로드 시점에 Streamlit이 완전히 초기화되지 않을 수 있으므로,
+# sys.stdout 재설정은 하지 않고 safe_print 함수를 사용
+
+# print 함수를 안전한 버전으로 재정의 (Streamlit 환경 대응)
+_original_print = print
+def print(*args, **kwargs):
+    """안전한 print 함수 (Streamlit 환경 대응)"""
     try:
-        import io
-        if hasattr(sys.stdout, 'buffer'):
-            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-        if hasattr(sys.stderr, 'buffer'):
-            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
-    except Exception:
-        pass  # 실패해도 계속 진행
+        # sys.stdout이 닫혔는지 확인
+        if hasattr(sys.stdout, 'closed') and sys.stdout.closed:
+            return
+        if not hasattr(sys.stdout, 'write'):
+            return
+        _original_print(*args, **kwargs)
+    except (ValueError, OSError, AttributeError):
+        # 출력 실패 시 무시 (Streamlit 환경 등)
+        pass
 
 # 이모지를 안전하게 출력하는 헬퍼 함수
 def safe_print(*args, **kwargs):
     """Windows에서 이모지가 포함된 출력을 안전하게 처리"""
     try:
         print(*args, **kwargs)
-    except UnicodeEncodeError:
+    except (UnicodeEncodeError, ValueError, OSError):
         # 이모지를 ASCII로 대체하여 출력
-        safe_args = []
-        for arg in args:
-            if isinstance(arg, str):
-                # 주요 이모지를 ASCII로 대체
-                arg = arg.replace('🧪', '[TEST]')
-                arg = arg.replace('✅', '[OK]')
-                arg = arg.replace('❌', '[ERROR]')
-                arg = arg.replace('⚠️', '[WARN]')
-                arg = arg.replace('📊', '[STAT]')
-                arg = arg.replace('📈', '[INFO]')
-                arg = arg.replace('▸', '->')
-            safe_args.append(arg)
-        print(*safe_args, **kwargs)
+        try:
+            safe_args = []
+            for arg in args:
+                if isinstance(arg, str):
+                    # 주요 이모지를 ASCII로 대체
+                    arg = arg.replace('🧪', '[TEST]')
+                    arg = arg.replace('✅', '[OK]')
+                    arg = arg.replace('❌', '[ERROR]')
+                    arg = arg.replace('⚠️', '[WARN]')
+                    arg = arg.replace('📊', '[STAT]')
+                    arg = arg.replace('📈', '[INFO]')
+                    arg = arg.replace('▸', '->')
+                safe_args.append(arg)
+            print(*safe_args, **kwargs)
+        except (ValueError, OSError):
+            # 출력 실패 시 무시 (Streamlit 환경 등)
+            pass
 
 import json
 import argparse

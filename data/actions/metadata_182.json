@@ -20,7 +20,7 @@
 			"text_content": "공정상세 관리",
 			"timestamp": "2025-10-19T23:19:21.496Z",
 			"updated_at": "2025-10-20T08:19:21.556Z",
-			"screenshot_real_path": "C:\\Users\\Administrator\\Desktop\\182_screenshots\\1.png"
+			"screenshot_real_path": "data/screenshots/182/1.png"
 		},
 		{
 			"action_id": 2930,
@@ -42,7 +42,7 @@
 			"text_content": "분석",
 			"timestamp": "2025-10-19T23:19:22.595Z",
 			"updated_at": "2025-10-20T08:19:22.619Z",
-			"screenshot_real_path": "C:\\Users\\Administrator\\Desktop\\182_screenshots\\2.png"
+			"screenshot_real_path": "data/screenshots/182/2.png"
 		},
 		{
 			"action_id": 2931,
@@ -64,7 +64,7 @@
 			"text_content": null,
 			"timestamp": "2025-10-19T23:19:22.677Z",
 			"updated_at": "2025-10-20T08:19:22.705Z",
-			"screenshot_real_path": "C:\\Users\\Administrator\\Desktop\\182_screenshots\\3.png"
+			"screenshot_real_path": "data/screenshots/182/3.png"
 		},
 		{
 			"action_id": 2932,
@@ -86,7 +86,7 @@
 			"text_content": "요구사항 정의",
 			"timestamp": "2025-10-19T23:19:23.713Z",
 			"updated_at": "2025-10-20T08:19:23.739Z",
-			"screenshot_real_path": "C:\\Users\\Administrator\\Desktop\\182_screenshots\\4.png"
+			"screenshot_real_path": "data/screenshots/182/4.png"
 		},
 		{
 			"action_id": 2933,
@@ -108,7 +108,7 @@
 			"text_content": null,
 			"timestamp": "2025-10-19T23:19:23.773Z",
 			"updated_at": "2025-10-20T08:19:23.796Z",
-			"screenshot_real_path": "C:\\Users\\Administrator\\Desktop\\182_screenshots\\5.png"
+			"screenshot_real_path": "data/screenshots/182/5.png"
 		},
 		{
 			"action_id": 2934,
@@ -130,7 +130,7 @@
 			"text_content": null,
 			"timestamp": "2025-10-19T23:19:23.958Z",
 			"updated_at": "2025-10-20T08:19:23.978Z",
-			"screenshot_real_path": "C:\\Users\\Administrator\\Desktop\\182_screenshots\\6.png"
+			"screenshot_real_path": "data/screenshots/182/6.png"
 		},
 		{
 			"action_id": 2935,
@@ -152,7 +152,7 @@
 			"text_content": null,
 			"timestamp": "2025-10-19T23:19:24.110Z",
 			"updated_at": "2025-10-20T08:19:24.137Z",
-			"screenshot_real_path": "C:\\Users\\Administrator\\Desktop\\182_screenshots\\7.png"
+			"screenshot_real_path": "data/screenshots/182/7.png"
 		},
 		{
 			"action_id": 2936,
@@ -174,7 +174,7 @@
 			"text_content": null,
 			"timestamp": "2025-10-19T23:19:24.281Z",
 			"updated_at": "2025-10-20T08:19:24.309Z",
-			"screenshot_real_path": "C:\\Users\\Administrator\\Desktop\\182_screenshots\\8.png"
+			"screenshot_real_path": "data/screenshots/182/8.png"
 		},
 		{
 			"action_id": 2937,
@@ -196,7 +196,7 @@
 			"text_content": null,
 			"timestamp": "2025-10-19T23:19:24.348Z",
 			"updated_at": "2025-10-20T08:19:24.390Z",
-			"screenshot_real_path": "C:\\Users\\Administrator\\Desktop\\182_screenshots\\9.png"
+			"screenshot_real_path": "data/screenshots/182/9.png"
 		},
 		{
 			"action_id": 2938,
@@ -218,7 +218,7 @@
 			"text_content": "추가하기",
 			"timestamp": "2025-10-19T23:19:27.010Z",
 			"updated_at": "2025-10-20T08:19:27.066Z",
-			"screenshot_real_path": "C:\\Users\\Administrator\\Desktop\\182_screenshots\\10.png"
+			"screenshot_real_path": "data/screenshots/182/10.png"
 		},
 		{
 			"action_id": 2939,
@@ -240,7 +240,7 @@
 			"text_content": null,
 			"timestamp": "2025-10-19T23:19:27.105Z",
 			"updated_at": "2025-10-20T08:19:27.152Z",
-			"screenshot_real_path": "C:\\Users\\Administrator\\Desktop\\182_screenshots\\11.png"
+			"screenshot_real_path": "data/screenshots/182/11.png"
 		},
 		{
 			"action_id": 2940,
@@ -262,7 +262,7 @@
 			"text_content": null,
 			"timestamp": "2025-10-19T23:19:28.763Z",
 			"updated_at": "2025-10-20T08:19:28.801Z",
-			"screenshot_real_path": "C:\\Users\\Administrator\\Desktop\\182_screenshots\\12.png"
+			"screenshot_real_path": "data/screenshots/182/12.png"
 		},
 		{
 			"action_id": 2941,
@@ -284,7 +284,7 @@
 			"text_content": null,
 			"timestamp": "2025-10-19T23:19:34.076Z",
 			"updated_at": "2025-10-20T08:19:34.125Z",
-			"screenshot_real_path": "C:\\Users\\Administrator\\Desktop\\182_screenshots\\13.png"
+			"screenshot_real_path": "data/screenshots/182/13.png"
 		},
 		{
 			"action_id": 2942,
@@ -306,7 +306,7 @@
 			"text_content": "저장하기",
 			"timestamp": "2025-10-19T23:19:34.241Z",
 			"updated_at": "2025-10-20T08:19:34.279Z",
-			"screenshot_real_path": "C:\\Users\\Administrator\\Desktop\\182_screenshots\\14.png"
+			"screenshot_real_path": "data/screenshots/182/14.png"
 		},
 		{
 			"action_id": 2943,
@@ -328,7 +328,7 @@
 			"text_content": "설계",
 			"timestamp": "2025-10-19T23:19:43.156Z",
 			"updated_at": "2025-10-20T08:19:43.196Z",
-			"screenshot_real_path": "C:\\Users\\Administrator\\Desktop\\182_screenshots\\15.png"
+			"screenshot_real_path": "data/screenshots/182/15.png"
 		},
 		{
 			"action_id": 2944,
@@ -350,7 +350,7 @@
 			"text_content": null,
 			"timestamp": "2025-10-19T23:19:43.238Z",
 			"updated_at": "2025-10-20T08:19:43.279Z",
-			"screenshot_real_path": "C:\\Users\\Administrator\\Desktop\\182_screenshots\\16.png"
+			"screenshot_real_path": "data/screenshots/182/16.png"
 		},
 		{
 			"action_id": 2945,
@@ -372,7 +372,7 @@
 			"text_content": "프로그램 설계",
 			"timestamp": "2025-10-19T23:19:45.457Z",
 			"updated_at": "2025-10-20T08:19:45.500Z",
-			"screenshot_real_path": "C:\\Users\\Administrator\\Desktop\\182_screenshots\\17.png"
+			"screenshot_real_path": "data/screenshots/182/17.png"
 		},
 		{
 			"action_id": 2947,
@@ -394,7 +394,7 @@
 			"text_content": null,
 			"timestamp": "2025-10-19T23:19:45.523Z",
 			"updated_at": "2025-10-20T08:19:45.708Z",
-			"screenshot_real_path": "C:\\Users\\Administrator\\Desktop\\182_screenshots\\18.png"
+			"screenshot_real_path": "data/screenshots/182/18.png"
 		},
 		{
 			"action_id": 2946,
@@ -416,7 +416,7 @@
 			"text_content": null,
 			"timestamp": "2025-10-19T23:19:45.657Z",
 			"updated_at": "2025-10-20T08:19:45.708Z",
-			"screenshot_real_path": "C:\\Users\\Administrator\\Desktop\\182_screenshots\\19.png"
+			"screenshot_real_path": "data/screenshots/182/19.png"
 		},
 		{
 			"action_id": 2948,
@@ -438,7 +438,7 @@
 			"text_content": null,
 			"timestamp": "2025-10-19T23:19:45.710Z",
 			"updated_at": "2025-10-20T08:19:45.787Z",
-			"screenshot_real_path": "C:\\Users\\Administrator\\Desktop\\182_screenshots\\20.png"
+			"screenshot_real_path": "data/screenshots/182/20.png"
 		},
 		{
 			"action_id": 2949,
@@ -460,7 +460,7 @@
 			"text_content": null,
 			"timestamp": "2025-10-19T23:19:45.910Z",
 			"updated_at": "2025-10-20T08:19:45.937Z",
-			"screenshot_real_path": "C:\\Users\\Administrator\\Desktop\\182_screenshots\\21.png"
+			"screenshot_real_path": "data/screenshots/182/21.png"
 		},
 		{
 			"action_id": 2950,
@@ -482,7 +482,7 @@
 			"text_content": null,
 			"timestamp": "2025-10-19T23:19:45.962Z",
 			"updated_at": "2025-10-20T08:19:45.990Z",
-			"screenshot_real_path": "C:\\Users\\Administrator\\Desktop\\182_screenshots\\22.png"
+			"screenshot_real_path": "data/screenshots/182/22.png"
 		},
 		{
 			"action_id": 2951,
@@ -504,7 +504,7 @@
 			"text_content": "추가하기",
 			"timestamp": "2025-10-19T23:19:51.847Z",
 			"updated_at": "2025-10-20T08:19:51.887Z",
-			"screenshot_real_path": "C:\\Users\\Administrator\\Desktop\\182_screenshots\\23.png"
+			"screenshot_real_path": "data/screenshots/182/23.png"
 		},
 		{
 			"action_id": 2952,
@@ -526,7 +526,7 @@
 			"text_content": null,
 			"timestamp": "2025-10-19T23:19:51.927Z",
 			"updated_at": "2025-10-20T08:19:51.960Z",
-			"screenshot_real_path": "C:\\Users\\Administrator\\Desktop\\182_screenshots\\24.png"
+			"screenshot_real_path": "data/screenshots/182/24.png"
 		}
 	]
 }

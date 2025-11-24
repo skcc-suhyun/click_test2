@@ -71,14 +71,18 @@ data/actions/temp_*
 *.xls
 
 # Screenshots (if stored in project)
-data/screenshots/
-screenshots/
+# data/screenshots/ 폴더는 Git에 포함 (테스트용 이미지)
+# 먼저 모든 이미지 파일 제외
 *.png
 *.jpg
 *.jpeg
 *.gif
 *.bmp
 *.tiff
+# 그 다음 data/screenshots/ 폴더는 예외로 포함
+!data/screenshots/
+!data/screenshots/**
+screenshots/
 
 # Logs
 *.log
