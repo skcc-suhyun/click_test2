@@ -310,9 +310,10 @@ class UIScreenshotAnalyzer:
         2) Flow 안에서 화면 전환 신호 감지해서 재분할
         3) 묶음의 대표 화면 = 항상 마지막 화면
         """
-        print("[5/6] 순서 기반 플로우 생성 및 화면 전환 감지 중...")
+        print("[5/6] 화면별 요약 정보 생성 중...")
 
         # 1) 액션을 sequence 순서대로 정렬 (순서 보존 필수)
+        print("  - 액션 순서 정렬 중...")
         sorted_actions = sorted(
             [a for a in self.actions if a.screenshot_path and os.path.exists(a.screenshot_path)],
             key=lambda a: (
@@ -326,10 +327,15 @@ class UIScreenshotAnalyzer:
             print("  ⚠️ 스크린샷이 있는 액션이 없습니다.")
             return
 
+        print(f"  - 정렬된 액션: {len(sorted_actions)}개")
+
         # 2) 순서대로 플로우 생성하면서 화면 전환 감지
+        print("  - 순서 기반 플로우 생성 및 화면 전환 감지 중...")
         flows: List[List[Action]] = []
         current_flow: List[Action] = [sorted_actions[0]]
+        screen_change_count = 0
 
+        total = len(sorted_actions)
         for i in range(1, len(sorted_actions)):
             prev_action = sorted_actions[i - 1]
             curr_action = sorted_actions[i]
@@ -363,6 +369,12 @@ class UIScreenshotAnalyzer:
                 # 화면 전환 감지 → 현재 플로우 종료, 새 플로우 시작
                 flows.append(current_flow)
                 current_flow = [curr_action]
+                screen_change_count += 1
+                
+                # 진행 상황 출력 (10% 단위)
+                if total > 0 and i % max(1, total // 10) == 0:
+                    print(f"    진행률: {i}/{total} ({i / total * 100:.1f}%), 화면 전환 {screen_change_count}회 감지")
+
             else:
                 # 같은 화면 → 현재 플로우에 추가
                 current_flow.append(curr_action)
@@ -371,7 +383,10 @@ class UIScreenshotAnalyzer:
         if current_flow:
             flows.append(current_flow)
 
+        print(f"  - 플로우 생성 완료: {len(flows)}개 플로우, 화면 전환 {screen_change_count}회 감지")
+
         # 3) 각 플로우를 ScreenCluster로 변환 (대표 이미지 = 마지막 화면)
+        print("  - ScreenCluster 객체 생성 중...")
         clusters: List[ScreenCluster] = []
         for idx, flow_actions in enumerate(flows):
             if not flow_actions:
@@ -399,8 +414,11 @@ class UIScreenshotAnalyzer:
             )
             clusters.append(sc)
 
+        print(f"  - ScreenCluster 생성 완료: {len(clusters)}개")
+
         # 클릭이 없는 클러스터 필터링 (옵션)
         if self.filter_no_clicks:
+            print("  - 클릭이 없는 클러스터 필터링 중...")
             filtered_clusters = []
             removed_count = 0
             for sc in clusters:
@@ -420,7 +438,7 @@ class UIScreenshotAnalyzer:
 
     def print_summary(self) -> None:
         """클러스터 결과를 터미널에 예쁘게 출력"""
-        print("[6/6] 결과 출력\n")
+        print("[6/6] 완료!\n")
         print("=" * 100)
         print(f"📊 클러스터링 완료: 총 {len(self.clusters)}개 화면 그룹")
         print("=" * 100)
@@ -533,6 +551,7 @@ def main() -> None:
         filter_no_clicks=not args.no_filter_clicks,
     )
 
+    # 분석 단계별 실행 (test2_visualizer.py와 동일한 순서)
     analyzer.load_actions()
     analyzer.collect_screenshot_paths()
     analyzer.load_images_and_hashes()  # 이미지와 해시 로드 (화면 전환 감지에 필요)
